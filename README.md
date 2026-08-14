@@ -5,11 +5,20 @@ Swift Package Manager distribution for the Mediastream Platform SDK for iOS.
 This repository holds only the package manifest. The SDK ships as a precompiled
 XCFramework hosted on Mediastream's CDN; the source lives in a private repository.
 
-## Installation
+Requires **iOS 12.0** or later and Xcode 15 or later.
 
-In Xcode: **File → Add Package Dependencies…**, then paste this repository's URL.
+## Xcode
 
-Or in a `Package.swift`:
+**File → Add Package Dependencies…**, paste:
+
+```
+https://github.com/mediastream/MediastreamPlatformSDKiOS-spm.git
+```
+
+Choose **Up to Next Major Version** from `5.1.0` and add the `MediastreamPlatformSDKiOS`
+product to your app target.
+
+## Package.swift
 
 ```swift
 dependencies: [
@@ -26,42 +35,87 @@ Then:
 import MediastreamPlatformSDKiOS
 ```
 
-Requires **iOS 12.0** or later and Xcode 15 or later.
+## Migrating from CocoaPods
 
-## What this package pulls in
-
-| Dependency | Version | Source |
-|---|---|---|
-| GoogleInteractiveMediaAds | 3.24.0 (exact) | github.com/googleads |
-| YouboraAVPlayerAdapter | 6.7.5 (exact) | github.com/NPAW |
-| YouboraLib | 6.7.x | bitbucket.org/npaw (transitive) |
-| ComScore | 6.17.0+ | github.com/comScore |
-
-`AdSupport` is linked for you. If your app presents the App Tracking Transparency
-prompt, link `AppTrackingTransparency` in your own target.
-
-If your build environment restricts outbound git access, allow **bitbucket.org** —
-NPAW distributes YouboraLib from there.
-
-## Coming from CocoaPods
-
-`MediastreamPlatformSDKxC` 5.0.1 is the last release published to CocoaPods. New
-versions ship through this package only.
+`MediastreamPlatformSDKxC` **5.0.1 is the last version published to CocoaPods.** New
+versions ship through the Swift package only. Versions already on trunk stay installable
+forever, but they will not receive fixes.
 
 1. Remove `pod 'MediastreamPlatformSDKxC'` from your Podfile and run `pod install`.
-2. Add this package as shown above.
-3. No code changes — the public API and `import MediastreamPlatformSDKiOS` are unchanged.
+2. Add the package as shown above.
+3. **No code changes.** The public API and `import MediastreamPlatformSDKiOS` are unchanged.
 
-The Google Cast SDK has no official Swift Package. If your app uses Chromecast, keep
-`google-cast-sdk` on CocoaPods (both dependency managers coexist in one project) or add
-the Cast `.xcframework` manually.
+Both dependency managers can coexist in the same project, which matters if you use
+Chromecast — see below.
 
-## Pre-release builds
+## What the package pulls in
 
-QA versions (e.g. `5.2.0-qa.01`) need an exact version pin — Swift Package Manager does
-not select pre-releases from version ranges.
+| Dependency | You get | Notes |
+|---|---|---|
+| GoogleInteractiveMediaAds | `3.24.0` up to but not including `3.28.0` | The upper bound is a platform boundary, not a preference: from 3.28 the package requires iOS 15 |
+| YouboraLib | `6.7.x` from `6.7.23` | Distributed by NPAW from **bitbucket.org** |
+| ComScore | `6.17.x` | |
 
-## Documentation
+`AdSupport` is linked for you. If your app shows the App Tracking Transparency prompt,
+link `AppTrackingTransparency` in your own target — the SDK does not do it for you.
 
-Integration guides live in the SDK repository, including the
-[Cast integration guide](https://github.com/mediastream/MediastreamPlatformSDKiOS/blob/master/CAST_INTEGRATION.md).
+**If your build environment restricts outbound git access, allow `bitbucket.org`.** NPAW
+distributes YouboraLib from there, and it is a transitive dependency you cannot avoid.
+
+### Why the versions you resolve may differ from the ones we built against
+
+The SDK is compiled against the **lowest** version of each range and runs against whatever
+your project resolves, which is usually the highest. That direction is deliberate: building
+against the lowest guarantees we never call an API missing from a version you might
+resolve, while running against a newer one is safe because these SDKs add rather than
+remove. See the compatibility table below for the exact versions per release.
+
+## Chromecast
+
+The Google Cast SDK **has no official Swift Package.** If your app uses Chromecast:
+
+- keep `google-cast-sdk` on CocoaPods — it coexists with SPM in the same project; or
+- add the Cast `.xcframework` manually.
+
+Integration details: [`CAST_INTEGRATION.md`](CAST_INTEGRATION.md).
+
+## Pre-release channels
+
+Two channels exist besides production. **A version range never resolves them** — a
+dependency declared as `from: "5.1.0"` will never pick up a `-dev` or `-rc` build, so they
+cannot reach you by accident. They have to be requested by name:
+
+```swift
+// a specific release candidate, for validating before it ships
+.package(url: "…-spm.git", exact: "5.2.0-rc.3")
+
+// the newest development build, for internal apps only
+.package(url: "…-spm.git", branch: "develop")
+```
+
+`-rc` builds are candidates that passed QA. `-dev` builds are throwaway and carry no
+guarantee at all.
+
+## Reporting a problem
+
+Include your **`Package.resolved`**. It records exactly which versions of the SDK and of
+its dependencies your app resolved, which is the first thing needed to tell a real bug
+apart from a combination outside the tested set.
+
+Find it at:
+
+```
+YourApp.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
+```
+
+## Compatibility per release
+
+Versions each release was **built against**, and the ranges a consumer may resolve.
+
+| SDK | iOS | IMA (built / allowed) | YouboraLib (built / allowed) | ComScore (built / allowed) |
+|---|---|---|---|---|
+| 5.1.0 | 12.0+ | 3.24.0 / `3.24.0 ..< 3.28.0` | 6.7.23 / `6.7.x` | 6.17.0 / `6.17.x` |
+
+Anything outside these ranges is untested. A minor bump of a dependency is validated and
+shipped in an SDK release rather than flowing through automatically, because that is where
+behaviour changes have historically landed.
