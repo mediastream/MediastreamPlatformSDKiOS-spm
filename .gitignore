@@ -1,0 +1,4 @@
+# Local dev only: the published manifest uses url: + checksum:
+MediastreamPlatformSDKiOS.xcframework/
+.build/
+Package.resolved
