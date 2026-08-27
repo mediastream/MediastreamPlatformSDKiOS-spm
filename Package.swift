@@ -3,10 +3,10 @@ import PackageDescription
 
 let package = Package(
   name: "MediastreamPlatformSDKiOS",
-  platforms: [.iOS(.v12)],
+  platforms: [.iOS(.v13)],
   products: [
     // The product carries the binary AND the wrapper, so consumers get the module plus
-    // IMA / Youbora / ComScore / AdSupport in one dependency.
+    // IMA / Youbora / ComScore / EaseLive / AdSupport in one dependency.
     .library(
       name: "MediastreamPlatformSDKiOS",
       targets: ["MediastreamPlatformSDKiOS", "MediastreamSDKDependencies"]
@@ -17,7 +17,7 @@ let package = Package(
     // whole graph, so an app that also uses IMA directly at another version would fail to
     // resolve with no way out. The upper bound is a platform boundary, not a semver
     // guess: 3.24–3.27 declare .iOS(.v11), and from 3.28 the package declares .iOS(.v15),
-    // which would break this package's iOS 12 floor.
+    // which would break this package's iOS 13 floor.
     .package(
       url: "https://github.com/googleads/swift-package-manager-google-interactive-media-ads-ios.git",
       "3.24.0"..<"3.28.0"
@@ -38,6 +38,14 @@ let package = Package(
     .package(
       url: "https://github.com/comScore/Comscore-Swift-Package-Manager.git",
       .upToNextMinor(from: "6.17.0")
+    ),
+    // PlayAnywhere. Ships as a binaryTarget, so it stays a dynamic framework the SDK loads
+    // at runtime and declaring it here is what makes a consumer embed it — the XCFramework
+    // records @rpath/EaseLiveSDK.framework/EaseLiveSDK and nothing else would satisfy it.
+    // Its manifest is swift-tools-version:6.0, so resolving this graph needs Xcode 16+.
+    .package(
+      url: "https://github.com/ease-live/ease-live-bridge-ios-spm.git",
+      .upToNextMinor(from: "2.29.0")
     )
   ],
   targets: [
@@ -58,7 +66,8 @@ let package = Package(
           package: "swift-package-manager-google-interactive-media-ads-ios"
         ),
         .product(name: "YouboraLib", package: "lib-plugin-spm-ios"),
-        .product(name: "ComScore", package: "Comscore-Swift-Package-Manager")
+        .product(name: "ComScore", package: "Comscore-Swift-Package-Manager"),
+        .product(name: "EaseLiveSDK", package: "ease-live-bridge-ios-spm")
       ],
       path: "Sources/MediastreamSDKDependencies",
       // Mirrors s.frameworks = 'AdSupport' from the podspec. Belt and braces: the
