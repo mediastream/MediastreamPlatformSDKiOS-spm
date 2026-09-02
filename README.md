@@ -121,6 +121,7 @@ Versions each release was **built against**, and the ranges a consumer may resol
 | SDK | iOS | IMA (built / allowed) | YouboraLib (built / allowed) | ComScore (built / allowed) | EaseLiveSDK (built / allowed) |
 |---|---|---|---|---|---|
 | 5.1.0 | 12.0+ | 3.24.0 / `3.24.0 ..< 3.28.0` | 6.7.23 / `6.7.x` | 6.17.0 / `6.17.x` | — |
+| 5.2.0 | 12.0+ | 3.24.0 / `3.24.0 ..< 3.28.0` | 6.7.23 / `6.7.x` | 6.17.0 / `6.17.x` | — |
 | 6.0.0 | 13.0+ | 3.24.0 / `3.24.0 ..< 3.28.0` | 6.7.23 / `6.7.x` | 6.17.0 / `6.17.x` | 2.29.0 / `2.29.x` |
 
 Anything outside these ranges is untested. A minor bump of a dependency is validated and
