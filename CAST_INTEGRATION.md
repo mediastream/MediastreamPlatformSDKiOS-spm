@@ -45,6 +45,8 @@ This document describes how to integrate **Google Cast** (Chromecast) with the M
 
 The SDK does **not** depend on or include the Google Cast framework. You add it to your app (e.g. via CocoaPods) and implement all Cast session and media logic.
 
+> **Requires 6.7.0 or later.** `castStreamUrl`, `castStreamContentType`, `getCastSubtitleTracks()` and the `extendedLanguageCode` field on subtitle tracks ship from **6.7.0**. On an earlier version they do not exist, and the code in this guide does not compile: load `castUrl` as before, and update to 6.7.0 before the platform starts marking subtitles with `in_hls_manifest`. `castUrl` keeps working unchanged from 6.7.0 on, but for the reason explained in [Subtitles on Cast](#subtitles-on-cast), moving to `castStreamUrl` is what keeps every subtitle language on the Cast device.
+
 ---
 
 ## What your app must implement
