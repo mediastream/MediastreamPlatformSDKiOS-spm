@@ -54,8 +54,8 @@ let package = Package(
     // hand is how a checksum mismatch reaches a consumer.
     .binaryTarget(
       name: "MediastreamPlatformSDKiOS",
-      url: "https://s3.amazonaws.com/mediastream-platform-sdk-ios/sdk/6.5.0/MediastreamPlatformSDKiOSxC.zip",
-      checksum: "1fa7d7dd2adef7459e25e083b62f5ec54b0a41d98ee936f49c9c87f1b424fbf8"
+      url: "https://s3.amazonaws.com/mediastream-platform-sdk-ios/sdk/6.6.0/MediastreamPlatformSDKiOSxC.zip",
+      checksum: "07381d2930aa8a3aea2da45f814e3c5035dffef2291c2d38c3873b5da35ca7e7"
     ),
     .target(
       name: "MediastreamSDKDependencies",
