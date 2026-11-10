@@ -60,13 +60,15 @@ Chromecast — see below.
 | YouboraLib | `6.7.x` from `6.7.23` | Distributed by NPAW from **bitbucket.org** |
 | ComScore | `6.17.x` | |
 | EaseLiveSDK | `2.29.x` from `2.29.0` | Powers PlayAnywhere. Downloaded from **sdk.easelive.tv**; sets the iOS 13 and Xcode 16 floors |
+| itg-apple-sdk | `2.7.x` from `2.7.36` | Powers the ITG (In The Game) overlay: products `InthegametviOS` and `ITGPlayerViewController`. Prebuilt binaries in **github.com/Inthegamesdk**, built with Swift 6.3.3; verified with Xcode 26.3, not yet with Xcode 16 |
 
 `AdSupport` is linked for you. If your app shows the App Tracking Transparency prompt,
 link `AppTrackingTransparency` in your own target — the SDK does not do it for you.
 
 **If your build environment restricts outbound access, allow `bitbucket.org`,
-`github.com/ease-live` and `sdk.easelive.tv`.** NPAW distributes YouboraLib from Bitbucket and
-EaseLive ships its binary from its own CDN; both are transitive dependencies you cannot avoid.
+`github.com/ease-live`, `sdk.easelive.tv` and `github.com/Inthegamesdk`.** NPAW distributes
+YouboraLib from Bitbucket, EaseLive ships its binary from its own CDN and ITG keeps its binaries
+in its GitHub repository; all are transitive dependencies you cannot avoid.
 
 ### Why the versions you resolve may differ from the ones we built against
 
