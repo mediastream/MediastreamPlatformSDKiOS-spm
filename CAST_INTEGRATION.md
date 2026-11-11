@@ -36,8 +36,8 @@ This document describes how to integrate **Google Cast** (Chromecast) with the M
 |--------|-------------|
 | **Cast URL** | `castStreamUrl` — the URL to load on the Cast device. HLS when the content has that rendition, MP4 otherwise, so it covers VOD and Live/DVR alike. Available after media is loaded. **Use this one.** |
 | **Cast content type** | `castStreamContentType` — the MIME type matching `castStreamUrl` (`application/x-mpegURL` or `video/mp4`). Pass it to `GCKMediaInformationBuilder.contentType`. |
-| **Cast URL (legacy)** | `castUrl` — MP4-only and VOD-only, kept for backward compatibility: it stays empty for Live, which usually has no MP4 rendition. Prefer `castStreamUrl`; see [Subtitles on Cast](#subtitles-on-cast) for a subtitle caveat that applies when you load this one. |
-| **Subtitle tracks** | `getCastSubtitleTracks()` — the subtitle list to build `GCKMediaTrack`s from. See [Subtitles on Cast](#subtitles-on-cast). |
+| **Cast URL (legacy)** | `castUrl` — MP4-only and VOD-only, kept for backward compatibility: it stays empty for Live, which usually has no MP4 rendition. Prefer `castStreamUrl`. |
+| **Subtitle tracks** | `getCastSubtitleTracks(forCastURL:)` — the subtitle tracks to attach for the URL you loaded; pass `sdk.castStreamUrl`. See [Subtitles on Cast](#subtitles-on-cast). |
 | **Cast button** | `showCastButton` and `useCustomCastButton` in `MediastreamPlayerConfig` — show the SDK’s default Cast button or inject your own. |
 | **Casting mode** | `isCastingModeEnabled` and `setCastingModeEnabled(_:)` — when enabled, play/pause only emit events and the local player stays paused. |
 | **Events** | In casting mode, the SDK emits: `play`, `pause`, `seek`, `forward`, `backward`, `volume`. Your app forwards these to the Cast session. |
@@ -45,7 +45,7 @@ This document describes how to integrate **Google Cast** (Chromecast) with the M
 
 The SDK does **not** depend on or include the Google Cast framework. You add it to your app (e.g. via CocoaPods) and implement all Cast session and media logic.
 
-> **Requires 6.7.0 or later.** `castStreamUrl`, `castStreamContentType`, `getCastSubtitleTracks()` and the `extendedLanguageCode` field on subtitle tracks ship from **6.7.0**. On an earlier version they do not exist, and the code in this guide does not compile: load `castUrl` as before, and update to 6.7.0 before the platform starts marking subtitles with `in_hls_manifest`. `castUrl` keeps working unchanged from 6.7.0 on, but for the reason explained in [Subtitles on Cast](#subtitles-on-cast), moving to `castStreamUrl` is what keeps every subtitle language on the Cast device.
+> **Requires 6.7.0 or later.** `castStreamUrl`, `castStreamContentType`, `getCastSubtitleTracks()` and the `extendedLanguageCode` field on subtitle tracks ship from **6.7.0**. On an earlier version they do not exist, and the code in this guide does not compile: load `castUrl` as before. `getCastSubtitleTracks(forCastURL:)`, and subtitles declared in the `castStreamUrl` manifest, ship from **6.17.0**; see [Subtitles on Cast](#subtitles-on-cast).
 
 ---
 
@@ -177,14 +177,24 @@ Keep `currentCastPosition` in sync with `GCKMediaStatus.streamPosition` in your 
 
 Subtitles reach the Cast device two different ways, and only one of them is yours to send:
 
-- **In the manifest.** When you cast an HLS URL, the receiver parses the manifest itself and picks up the subtitle renditions declared in it. You do nothing.
-- **As sideload tracks.** Subtitle files uploaded to the platform (`.vtt`) are separate files. The receiver only gets them if you attach them as `GCKMediaTrack`s.
+- **In the manifest.** When you cast an HLS URL, the receiver parses the manifest itself and picks up the subtitle renditions declared in it. You do nothing. For VOD, `castStreamUrl` asks the platform to declare the uploaded `.vtt` files there too.
+- **As sideload tracks.** Subtitle files the manifest does not declare reach the receiver only if you attach them as `GCKMediaTrack`s.
 
-Build those tracks from `getCastSubtitleTracks()` — the same list as `getSubtitleTracks()`, minus `.ass`/`.ssa`, which Cast’s default receiver cannot render. Attach only the entries whose `type` is `"external"`; `"in-band"` entries are already inside the manifest and cannot be attached:
+Build those tracks from `getCastSubtitleTracks(forCastURL:)`, passing the URL you loaded (`sdk.castStreamUrl`). It already leaves out what the receiver gets elsewhere or cannot render, so attach everything it returns with `type` `"external"` and nothing else — never add `.vtt` files from your own sources, or the receiver lists those languages twice:
+
+| You load | `getCastSubtitleTracks(forCastURL:)` returns as `"external"` |
+|---|---|
+| `castStreamUrl`, HLS, VOD or episode without DRM | Nothing that has a file: every `.vtt` comes in the manifest. |
+| `castStreamUrl` for Live, or for DRM content | Every `.vtt`, as sideload. |
+| `castStreamUrl` as MP4, or `castUrl` | Every `.vtt`, as sideload. |
+
+`getCastSubtitleTracks()` without an argument still returns every `.vtt`, as in 6.15.0 and earlier: it cannot tell which URL you loaded. With `castStreamUrl` it would list the manifest languages twice, so move to `getCastSubtitleTracks(forCastURL:)`.
+
+`.ass`/`.ssa` are never returned: Cast’s default receiver cannot render them, and the platform does not put them in the manifest either. `"in-band"` entries are already inside the manifest and cannot be attached:
 
 ```swift
 func castSubtitleTracks(from sdk: MediastreamPlatformSDK) -> [GCKMediaTrack] {
-    return sdk.getCastSubtitleTracks().compactMap { track in
+    return sdk.getCastSubtitleTracks(forCastURL: sdk.castStreamUrl).compactMap { track in
         guard track["type"] as? String == "external",
               let url = track["url"] as? String,
               let index = track["index"] as? Int else { return nil }
@@ -205,7 +215,9 @@ func castSubtitleTracks(from sdk: MediastreamPlatformSDK) -> [GCKMediaTrack] {
 
 Each track dict carries `index`, `type`, `name`, `language`, `extendedLanguageCode` and — for `"external"` entries — `url`. Use `index` to call `setSubtitleTrack(atIndex:)` when reflecting a Cast selection back into the SDK, and match against `extendedLanguageCode` (the full BCP-47 tag, e.g. `es-PE`) rather than `language`, which is truncated to two letters and collides across regions.
 
-> **Cast `castStreamUrl`, not `castUrl`.** For VOD the platform also declares the uploaded `.vtt` files inside the HLS manifest, marking them with `in_hls_manifest` in the media response. The SDK skips those sideload files while HLS is playing, since the manifest already provides them — that is what keeps each language from appearing twice. If you load the MP4-only `castUrl` instead, the receiver has no manifest to read them from and those languages are missing on the Cast device. Loading `castStreamUrl` keeps what the receiver plays consistent with what the SDK filtered.
+> **Known limitation.** Whether the platform declares the `.vtt` files in the manifest depends on the account’s delivery configuration and on whether the content has DRM. The SDK detects DRM, but cannot see the account’s delivery configuration, so it assumes the manifest has them. On an account whose configuration does not include them, casting `castStreamUrl` for VOD shows no `.vtt` subtitles on the Cast device. Local playback is not affected.
+
+> **AirPlay is different.** AirPlay hands the receiver the same URL the phone is playing, which does not ask for manifest subtitles. Uploaded `.vtt` subtitles show on AirPlay only through screen mirroring, as before.
 
 ---
 
@@ -256,7 +268,7 @@ When `isCastingModeEnabled` is `true`, the following user actions **only emit ev
 - [ ] Add Google Cast SDK to the app.
 - [ ] Initialize Cast context and show Cast button (SDK config: `showCastButton`, optional `useCustomCastButton`).
 - [ ] On Cast session start: `setCastingModeEnabled(true)`, load media with `castStreamUrl` + `castStreamContentType`, register for `remoteMediaClient` updates.
-- [ ] Attach sideload subtitles as `GCKMediaTrack`s built from `getCastSubtitleTracks()` (see [Subtitles on Cast](#subtitles-on-cast)).
+- [ ] Attach sideload subtitles as `GCKMediaTrack`s built from `getCastSubtitleTracks(forCastURL:)` with the URL you loaded, and nothing else (see [Subtitles on Cast](#subtitles-on-cast)).
 - [ ] On Cast session end/suspend: `setCastingModeEnabled(false)`, restore position with `seekTo` + `play()` if desired.
 - [ ] Subscribe to SDK events: `play`, `pause`, `seek`, `forward`, `backward`, `volume` and forward to Cast as described above.
 - [ ] In `didUpdate mediaStatus`: sync timeline with `seekTo(streamPosition)` and optionally sync play/pause UI (without re-forwarding to Cast).
