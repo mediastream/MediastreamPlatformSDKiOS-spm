@@ -6,7 +6,7 @@ let package = Package(
   platforms: [.iOS(.v13)],
   products: [
     // The product carries the binary AND the wrapper, so consumers get the module plus
-    // IMA / Youbora / ComScore / EaseLive / AdSupport in one dependency.
+    // IMA / Youbora / ComScore / EaseLive / ITG / AdSupport in one dependency.
     .library(
       name: "MediastreamPlatformSDKiOS",
       targets: ["MediastreamPlatformSDKiOS", "MediastreamSDKDependencies"]
@@ -46,6 +46,10 @@ let package = Package(
     .package(
       url: "https://github.com/ease-live/ease-live-bridge-ios-spm.git",
       .upToNextMinor(from: "2.29.0")
+    ),
+    .package(
+      url: "https://github.com/Inthegamesdk/itg-apple-sdk.git",
+      .upToNextMinor(from: "2.7.36")
     )
   ],
   targets: [
@@ -67,7 +71,9 @@ let package = Package(
         ),
         .product(name: "YouboraLib", package: "lib-plugin-spm-ios"),
         .product(name: "ComScore", package: "Comscore-Swift-Package-Manager"),
-        .product(name: "EaseLiveSDK", package: "ease-live-bridge-ios-spm")
+        .product(name: "EaseLiveSDK", package: "ease-live-bridge-ios-spm"),
+        .product(name: "InthegametviOS", package: "itg-apple-sdk"),
+        .product(name: "ITGPlayerViewController", package: "itg-apple-sdk")
       ],
       path: "Sources/MediastreamSDKDependencies",
       // Mirrors s.frameworks = 'AdSupport' from the podspec. Belt and braces: the
