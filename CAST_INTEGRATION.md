@@ -45,7 +45,7 @@ This document describes how to integrate **Google Cast** (Chromecast) with the M
 
 The SDK does **not** depend on or include the Google Cast framework. You add it to your app (e.g. via CocoaPods) and implement all Cast session and media logic.
 
-> **Requires 6.7.0 or later.** `castStreamUrl`, `castStreamContentType`, `getCastSubtitleTracks()` and the `extendedLanguageCode` field on subtitle tracks ship from **6.7.0**. On an earlier version they do not exist, and the code in this guide does not compile: load `castUrl` as before. `getCastSubtitleTracks(forCastURL:)`, and subtitles declared in the `castStreamUrl` manifest, ship from **6.17.0**; see [Subtitles on Cast](#subtitles-on-cast).
+> **Requires 6.7.0 or later.** `castStreamUrl`, `castStreamContentType`, `getCastSubtitleTracks()` and the `extendedLanguageCode` field on subtitle tracks ship from **6.7.0**. On an earlier version they do not exist, and the code in this guide does not compile: load `castUrl` as before. `getCastSubtitleTracks(forCastURL:)`, and subtitles declared in the `castStreamUrl` manifest, ship from **6.18.0**; see [Subtitles on Cast](#subtitles-on-cast).
 
 ---
 
@@ -188,7 +188,7 @@ Build those tracks from `getCastSubtitleTracks(forCastURL:)`, passing the URL yo
 | `castStreamUrl` for Live, or for DRM content | Every `.vtt`, as sideload. |
 | `castStreamUrl` as MP4, or `castUrl` | Every `.vtt`, as sideload. |
 
-`getCastSubtitleTracks()` without an argument still returns every `.vtt`, as in 6.15.0 and earlier: it cannot tell which URL you loaded. With `castStreamUrl` it would list the manifest languages twice, so move to `getCastSubtitleTracks(forCastURL:)`.
+`getCastSubtitleTracks()` without an argument still returns every `.vtt`, as in 6.17.0 and earlier: it cannot tell which URL you loaded. With `castStreamUrl` it would list the manifest languages twice, so move to `getCastSubtitleTracks(forCastURL:)`.
 
 `.ass`/`.ssa` are never returned: Cast’s default receiver cannot render them, and the platform does not put them in the manifest either. `"in-band"` entries are already inside the manifest and cannot be attached:
 
